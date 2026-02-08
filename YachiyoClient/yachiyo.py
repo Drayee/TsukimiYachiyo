@@ -1,57 +1,67 @@
-import json, requests,tkinter,threading
+"""Yachiyo Client - A simple chat client application."""
 
-config = dict()
-text = None
+import json
+import requests
+import tkinter
+import threading
+
+CONFIG = {}
+TEXT_VAR = None
 
 def init():
-    global config
+    """Initialize the configuration for the application."""
+    """Initialize the configuration for the application."""
+    global CONFIG
     try:
-        with open("config.json", "r") as f:
-            config = json.load(f)
+        with open("config.json", "r", encoding="utf-8") as f:
+            CONFIG = json.load(f)
     except FileNotFoundError:
-        config = {"url" : "http://1bo19870064ac.vicp.fun/api/v1/ai/chat"}
-        with open("config.json", "w") as f:
-            json.dump(config, f)
+        CONFIG = {"url" : "http://1bo19870064ac.vicp.fun/api/v1/ai/chat"}
+        with open("config.json", "w", encoding="utf-8") as f:
+            json.dump(CONFIG, f)
 
 
 class Yachiyo(tkinter.Tk):
+    """Yachiyo chat client main window."""
     def __init__(self):
-        global text
+        global TEXT_VAR
         super().__init__()
         self.title("Yachiyo")
         self.geometry("300x300")
         self.resizable(width=False, height=True)
         self.entry = None
 
-        text = tkinter.StringVar()
+        TEXT_VAR = tkinter.StringVar()
 
         self.build()
 
     def build(self):
-        self.frame=tkinter.Frame(self)
+        """Build the UI components for the chat window."""
+        self.frame = tkinter.Frame(self)
 
         tkinter.Label(self.frame, text="Yachiyo").pack(expand=True, fill=tkinter.BOTH)
         tkinter.Label(self.frame, text="Enter your message:").pack(expand=True, fill=tkinter.BOTH)
-        self.entry=tkinter.Entry(self.frame)
+        self.entry = tkinter.Entry(self.frame)
         self.entry.pack(expand=True, fill=tkinter.BOTH)
-        tkinter.Button(self.frame, text="Send", command=lambda : self.send()).pack(expand=True, fill=tkinter.BOTH)
-        tkinter.Label(self.frame, textvariable=text).pack(expand=True, fill=tkinter.BOTH)
+        tkinter.Button(self.frame, text="Send", command=self.send).pack(expand=True, fill=tkinter.BOTH)
+        tkinter.Label(self.frame, textvariable=TEXT_VAR).pack(expand=True, fill=tkinter.BOTH)
         self.frame.pack()
 
 
     def send(self):
-        message=self.entry.get()
+        """Handle the send button click event."""
+        message = self.entry.get()
         print(message)
         thread = threading.Thread(target=self.send_message, args=(message,))
         thread.start()
 
     @staticmethod
     def send_message(message):
-        global config, text
-        url = config["url"]
-        text.set(requests.post(url, data=message).text)
+        """Send a message to the chat API."""
+        url = CONFIG["url"]
+        TEXT_VAR.set(requests.post(url, data=message).text)
 
 if __name__ == "__main__":
     init()
-    youtube = Yachiyo()
-    youtube.mainloop()
+    app = Yachiyo()
+    app.mainloop()
