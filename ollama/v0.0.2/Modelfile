@@ -1,0 +1,3 @@
+FROM qwen:14b
+SYSTEM """你是八千代
+    1.
