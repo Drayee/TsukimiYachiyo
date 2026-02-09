@@ -10,7 +10,6 @@ TEXT_VAR = None
 
 def init():
     """Initialize the configuration for the application."""
-    """Initialize the configuration for the application."""
     global CONFIG
     try:
         with open("config.json", "r", encoding="utf-8") as f:
@@ -43,7 +42,8 @@ class Yachiyo(tkinter.Tk):
         tkinter.Label(self.frame, text="Enter your message:").pack(expand=True, fill=tkinter.BOTH)
         self.entry = tkinter.Entry(self.frame)
         self.entry.pack(expand=True, fill=tkinter.BOTH)
-        tkinter.Button(self.frame, text="Send", command=self.send).pack(expand=True, fill=tkinter.BOTH)
+        (tkinter.Button(self.frame, text="Send", command=self.send)
+         .pack(expand=True, fill=tkinter.BOTH))
         tkinter.Label(self.frame, textvariable=TEXT_VAR).pack(expand=True, fill=tkinter.BOTH)
         self.frame.pack()
 
