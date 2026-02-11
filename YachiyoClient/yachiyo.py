@@ -15,7 +15,7 @@ def init():
         with open("config.json", "r", encoding="utf-8") as f:
             CONFIG = json.load(f)
     except FileNotFoundError:
-        CONFIG = {"url" : "http://1bo19870064ac.vicp.fun/api/v1/ai/chat"}
+        CONFIG = {"url" : "http://localhost:8080/api/v1/ai/chat"}
         with open("config.json", "w", encoding="utf-8") as f:
             json.dump(CONFIG, f)
 
