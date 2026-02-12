@@ -1,8 +1,133 @@
+import os
+
 from ollama import chat
 import tkinter as tk
-from tkinter import scrolledtext, ttk
+from tkinter import scrolledtext,ttk
+from tkinter import messagebox
 import threading
 import time
+
+def init():
+    # 检查ollama是否安装
+    if os.system("ollama --version") != 0:
+        if messagebox.askokcancel("警告", "未检测到ollama，请先安装ollama"):
+            # 创建下载窗口
+            download_window = tk.Toplevel()
+            download_window.title("正在下载Ollama")
+            download_window.geometry("400x150")
+            download_window.resizable(False, False)
+            download_window.transient()
+            download_window.grab_set()
+            
+            # 创建标签
+            label = tk.Label(download_window, text="正在下载Ollama安装包...", font=("Microsoft YaHei", 12))
+            label.pack(pady=20)
+            
+            # 创建进度条
+            progress_var = tk.DoubleVar()
+            progress_bar = ttk.Progressbar(
+                download_window, 
+                variable=progress_var, 
+                maximum=100, 
+                length=350, 
+                mode='determinate'
+            )
+            progress_bar.pack(pady=10)
+            
+            # 创建状态标签
+            status_label = tk.Label(download_window, text="准备中...", font=("Microsoft YaHei", 10))
+            status_label.pack(pady=5)
+            
+            # 下载函数
+            def download_ollama():
+                try:
+                    import requests
+
+                    os.environ["SSL_CERT_FILE"] = ""
+                    os.environ["REQUESTS_CA_BUNDLE"] = ""
+
+                    url = 'https://ollama.com/download/OllamaSetup.exe'
+                    filename = 'OllamaSetup.exe'
+                    
+                    status_label.config(text="连接中...")
+                    download_window.update()
+                    
+                    response = requests.get(url, stream=True)
+                    total_size = int(response.headers.get('content-length', 0))
+                    block_size = 1024  # 1KB
+                    downloaded_size = 0
+                    
+                    with open(filename, 'wb') as f:
+                        for data in response.iter_content(block_size):
+                            downloaded_size += len(data)
+                            f.write(data)
+                            progress = (downloaded_size / total_size) * 100 if total_size > 0 else 0
+                            progress_var.set(progress)
+                            status_label.config(text=f"下载中: {progress:.1f}%")
+                            download_window.update()
+                    
+                    status_label.config(text="下载完成，正在启动安装...")
+                    download_window.update()
+                    
+                    os.startfile(filename)
+                    download_window.destroy()
+                except Exception as e:
+                    messagebox.showerror("错误", f"下载失败: {str(e)}")
+                    download_window.destroy()
+            
+            # 启动下载线程
+            threading.Thread(target=download_ollama).start()
+    
+    # 检查并拉取模型
+    def check_and_pull_model():
+        # 创建模型检查窗口
+        model_window = tk.Toplevel()
+        model_window.title("正在检查模型")
+        model_window.geometry("400x150")
+        model_window.resizable(False, False)
+        model_window.transient()
+        model_window.grab_set()
+        
+        # 创建标签
+        label = tk.Label(model_window, text="正在检查模型...", font=("Microsoft YaHei", 12))
+        label.pack(pady=20)
+        
+        # 创建进度条
+        progress_var = tk.DoubleVar()
+        progress_bar = ttk.Progressbar(
+            model_window, 
+            variable=progress_var, 
+            maximum=100, 
+            length=350, 
+            mode='indeterminate'
+        )
+        progress_bar.pack(pady=10)
+        progress_bar.start()
+        
+        # 检查函数
+        def check_model():
+            try:
+                # 检查模型是否存在
+                if os.system("ollama show 1473443474/tsukimi-yachiyo") != 0:
+                    label.config(text="模型不存在，正在拉取...")
+                    model_window.update()
+                    
+                    # 拉取模型
+                    os.system("ollama pull 1473443474/tsukimi-yachiyo")
+                
+                label.config(text="模型检查完成")
+                model_window.update()
+                time.sleep(1)
+                model_window.destroy()
+            except Exception as e:
+                messagebox.showerror("错误", f"模型检查失败: {str(e)}")
+                model_window.destroy()
+        
+        # 启动检查线程
+        threading.Thread(target=check_model).start()
+    
+    # 启动模型检查
+    check_and_pull_model()
 
 class YachiyoClient:
     def __init__(self, root):
@@ -21,6 +146,9 @@ class YachiyoClient:
         self.input_bg = "#ffffff"
         self.send_btn_bg = "#1890ff"
         self.send_btn_fg = "#ffffff"
+
+
+        init()
 
         # 聊天历史
         self.messages = []
