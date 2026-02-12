@@ -9,7 +9,7 @@ import time
 
 def init():
     # 检查ollama是否安装
-    if os.system("ollama --version") != 0:
+    if os.system("ollama --version") == 0:
         if messagebox.askokcancel("警告", "未检测到ollama，请先安装ollama"):
             # 创建下载窗口
             download_window = tk.Toplevel()
@@ -43,16 +43,13 @@ def init():
                 try:
                     import requests
 
-                    os.environ["SSL_CERT_FILE"] = ""
-                    os.environ["REQUESTS_CA_BUNDLE"] = ""
-
                     url = 'https://ollama.com/download/OllamaSetup.exe'
                     filename = 'OllamaSetup.exe'
                     
                     status_label.config(text="连接中...")
                     download_window.update()
                     
-                    response = requests.get(url, stream=True)
+                    response = requests.get(url, stream=True,verify=False)
                     total_size = int(response.headers.get('content-length', 0))
                     block_size = 1024  # 1KB
                     downloaded_size = 0
@@ -116,8 +113,9 @@ def init():
                     os.system("ollama pull 1473443474/tsukimi-yachiyo")
                 
                 label.config(text="模型检查完成")
-                model_window.update()
-                time.sleep(1)
+                while os.system("ollama show 1473443474/tsukimi-yachiyo") != 0:
+                    time.sleep(1)
+                    model_window.update()
                 model_window.destroy()
             except Exception as e:
                 messagebox.showerror("错误", f"模型检查失败: {str(e)}")
