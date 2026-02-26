@@ -1,6 +1,11 @@
 using System.Collections.ObjectModel;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Windows.Input;
 using EasyYachiyoClient.Model;
+using EasyYachiyoClient;
+using EasyYachiyoClient.Utils;
 
 namespace EasyYachiyoClient.ViewModel
 {
@@ -27,8 +32,18 @@ namespace EasyYachiyoClient.ViewModel
         public Conversation? SelectedConversation
         {
             get => _selectedConversation;
-            set => SetProperty(ref _selectedConversation, value);
+            set 
+            {
+                // 切换对话时取消当前语音操作
+                SpeechServiceManager.CancelCurrentOperation();
+                SetProperty(ref _selectedConversation, value);
+            }
         }
+
+        /// <summary>
+        /// 当前的取消令牌源
+        /// </summary>
+        private CancellationTokenSource? _currentCts;
 
         private string _messageText = string.Empty;
         /// <summary>
@@ -38,6 +53,26 @@ namespace EasyYachiyoClient.ViewModel
         {
             get => _messageText;
             set => SetProperty(ref _messageText, value);
+        }
+
+        private bool _isLoading;
+        /// <summary>
+        /// 是否正在加载
+        /// </summary>
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set => SetProperty(ref _isLoading, value);
+        }
+
+        private string _loadingStatus = string.Empty;
+        /// <summary>
+        /// 加载状态文本
+        /// </summary>
+        public string LoadingStatus
+        {
+            get => _loadingStatus;
+            set => SetProperty(ref _loadingStatus, value);
         }
         #endregion
 
@@ -66,6 +101,16 @@ namespace EasyYachiyoClient.ViewModel
         /// 关闭命令
         /// </summary>
         public ICommand CloseCommand { get; set; }
+
+        /// <summary>
+        /// 播放音频命令
+        /// </summary>
+        public ICommand PlayAudioCommand { get; set; }
+
+        /// <summary>
+        /// 播放/暂停音频命令
+        /// </summary>
+        public ICommand PlayPauseAudioCommand { get; set; }
         #endregion
 
         /// <summary>
@@ -99,6 +144,8 @@ namespace EasyYachiyoClient.ViewModel
             SettingsCommand = new RelayCommand(OpenSettings);
             MinimizeCommand = new RelayCommand(MinimizeWindow);
             CloseCommand = new RelayCommand(CloseWindow);
+            PlayAudioCommand = new RelayCommand(PlayAudio);
+            PlayPauseAudioCommand = new RelayCommand(PlayPauseAudio);
         }
 
         #region 命令执行方法
@@ -106,7 +153,7 @@ namespace EasyYachiyoClient.ViewModel
         /// 发送消息
         /// </summary>
         /// <param name="parameter">参数</param>
-        private void SendMessage(object? parameter)
+        private async void SendMessage(object? parameter)
         {
             if (!string.IsNullOrEmpty(MessageText) && SelectedConversation != null)
             {
@@ -122,9 +169,75 @@ namespace EasyYachiyoClient.ViewModel
                 // 清空输入框
                 MessageText = string.Empty;
 
-                // 模拟AI回复（预留接口，后续实现真实AI回复）
-                System.Threading.Tasks.Task.Delay(1000).ContinueWith(t =>
+                // 显示加载状态
+                IsLoading = true;
+                LoadingStatus = "等待中...";
+
+                try
                 {
+                    // 向API发送POST请求
+                    using HttpClient client = new HttpClient();
+                    client.Timeout = System.TimeSpan.FromSeconds(30);
+
+                    // 构建请求体
+                    var requestBody = new { prompt = SelectedConversation.Messages[SelectedConversation.Messages.Count - 1].Content };
+                    string jsonBody = JsonSerializer.Serialize(requestBody);
+                    var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+                    // 发送请求
+                    HttpResponseMessage response = await client.PostAsync("http://127.0.0.1:8080/api/v1/ai/chat", content);
+                    response.EnsureSuccessStatusCode();
+
+                    // 读取响应
+                    string responseContent = await response.Content.ReadAsStringAsync();
+
+                    // 尝试解析响应
+                string aiReply;
+                try
+                {
+                    // 尝试将响应解析为JSON（假设响应格式为 { "response": "AI回复内容" }）
+                    var responseData = JsonSerializer.Deserialize<dynamic>(responseContent);
+                    aiReply = responseData.response;
+                }
+                catch
+                {
+                    // 如果解析失败，则将整个响应内容作为AI回复（纯文本格式）
+                    aiReply = responseContent;
+                }
+
+                // 获取新的取消令牌源
+                _currentCts = SpeechServiceManager.GetNewCancellationTokenSource();
+
+                // 调用语音服务将文本转换为语音
+                byte[]? audioData = await SpeechServiceManager.TextToSpeechAsync(aiReply, _currentCts.Token);
+
+                // 添加AI回复（等待语音生成完毕后）
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (SelectedConversation != null && (_currentCts == null || !_currentCts.IsCancellationRequested))
+                    {
+                        var aiMessage = new Message
+                        {
+                            Id = SelectedConversation.Messages.Count + 1,
+                            Content = aiReply,
+                            IsUser = false,
+                            Timestamp = System.DateTime.Now,
+                            AudioData = audioData,
+                            AudioGenerated = audioData != null
+                        };
+                        SelectedConversation.Messages.Add(aiMessage);
+
+                        // 如果音频生成成功，自动播放
+                        if (audioData != null)
+                        {
+                            _ = SpeechServiceManager.PlayAudioAsync(audioData);
+                        }
+                    }
+                });
+                }
+                catch (Exception ex)
+                {
+                    // 处理异常
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
                         if (SelectedConversation != null)
@@ -132,13 +245,19 @@ namespace EasyYachiyoClient.ViewModel
                             SelectedConversation.Messages.Add(new Message
                             {
                                 Id = SelectedConversation.Messages.Count + 1,
-                                Content = "这是一条模拟的AI回复",
+                                Content = $"错误：{ex.Message}",
                                 IsUser = false,
                                 Timestamp = System.DateTime.Now
                             });
                         }
                     });
-                });
+                }
+                finally
+                {
+                    // 隐藏加载状态
+                    IsLoading = false;
+                    LoadingStatus = string.Empty;
+                }
             }
         }
 
@@ -165,8 +284,22 @@ namespace EasyYachiyoClient.ViewModel
         /// <param name="parameter">参数</param>
         private void OpenSettings(object? parameter)
         {
-            // 预留设置窗口打开逻辑
-            System.Windows.MessageBox.Show("设置功能将在后续版本中实现");
+            // 创建并显示设置窗口
+            SettingsWindow settingsWindow = new SettingsWindow();
+            // 设置窗口所有者为当前主窗口
+            foreach (var window in System.Windows.Application.Current.Windows)
+            {
+                if (window.GetType().Name == "MainWindow")
+                {
+                    if (window is System.Windows.Window mainWindow)
+                    {
+                        settingsWindow.Owner = mainWindow;
+                    }
+                    break;
+                }
+            }
+            // 以模态方式显示设置窗口
+            settingsWindow.ShowDialog();
         }
 
         /// <summary>
@@ -190,6 +323,39 @@ namespace EasyYachiyoClient.ViewModel
             if (parameter is System.Windows.Window window)
             {
                 window.Close();
+            }
+        }
+
+        /// <summary>
+        /// 播放音频
+        /// </summary>
+        /// <param name="parameter">消息对象</param>
+        private async void PlayAudio(object? parameter)
+        {
+            if (parameter is Model.Message message && message.AudioData != null)
+            {
+                await SpeechServiceManager.PlayAudioAsync(message.AudioData, message);
+            }
+        }
+
+        /// <summary>
+        /// 播放/暂停音频
+        /// </summary>
+        /// <param name="parameter">消息对象</param>
+        private async void PlayPauseAudio(object? parameter)
+        {
+            if (parameter is Model.Message message && message.AudioData != null)
+            {
+                if (message.IsPlaying)
+                {
+                    // 如果正在播放，则暂停
+                    SpeechServiceManager.PausePlayback();
+                }
+                else
+                {
+                    // 如果未播放或已暂停，则开始播放
+                    await SpeechServiceManager.PlayAudioAsync(message.AudioData, message);
+                }
             }
         }
         #endregion

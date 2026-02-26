@@ -36,6 +36,8 @@
         <local:BoolToBackgroundConverter x:Key="BoolToBackgroundConverter"/>
         <local:BoolToBorderBrushConverter x:Key="BoolToBorderBrushConverter"/>
         <local:BoolToConversationBackgroundConverter x:Key="BoolToConversationBackgroundConverter"/>
+        <local:BoolToInverseBoolConverter x:Key="BoolToInverseBoolConverter"/>
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         
         <Style x:Key="RoundedButtonStyle" TargetType="Button">
             <Setter Property="Template">
@@ -1001,18 +1003,48 @@
                                                     CornerRadius="8"
                                                     Padding="12"
                                                     MaxWidth="700">
-                                                    <StackPanel>
-                                                        <TextBlock 
-                                                            Text="{Binding Content}"
-                                                            FontSize="14"
-                                                            TextWrapping="Wrap"/>
-                                                        <TextBlock 
-                                                            Text="{Binding Timestamp, StringFormat='HH:mm'}"
-                                                            FontSize="12"
-                                                            Foreground="#808080"
-                                                            HorizontalAlignment="Right"
-                                                            Margin="0,5,0,0"/>
-                                                    </StackPanel>
+                                                    <Grid>
+                                                        <StackPanel>
+                                                            <TextBlock 
+                                                                Text="{Binding Content}"
+                                                                FontSize="14"
+                                                                TextWrapping="Wrap"/>
+                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
+                                                                <TextBlock 
+                                                                    Text="{Binding Timestamp, StringFormat='HH:mm'}"
+                                                                    FontSize="12"
+                                                                    Foreground="#808080"
+                                                                    Margin="0,0,5,0"/>
+                                                                <Button 
+                                                                    Width="20"
+                                                                    Height="20"
+                                                                    Background="Transparent"
+                                                                    BorderBrush="Transparent"
+                                                                    BorderThickness="0"
+                                                                    Command="{Binding DataContext.PlayPauseAudioCommand, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Visibility="{Binding IsUser, Converter={StaticResource BoolToInverseBoolConverter}}">
+                                                                    <Image 
+                                                                        Stretch="Uniform">
+                                                                        <Image.Style>
+                                                                            <Style TargetType="Image">
+                                                                                <Setter Property="Source" Value="/resource/play.png"/>
+                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                                                        <Setter Property="Source" Value="/resource/stop.png"/>
+                                                                                    </DataTrigger>
+                                                                                    <DataTrigger Binding="{Binding AudioGenerated}" Value="False">
+                                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </Image.Style>
+                                                                    </Image>
+                                                                </Button>
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                    </Grid>
                                                 </Border>
                                             </Grid>
                                         </DataTemplate>
@@ -1027,6 +1059,7 @@
                             Margin="0,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="100"/>
                             </Grid.ColumnDefinitions>
                             <TextBox 
@@ -1045,7 +1078,16 @@
                                 Background="#0077BE"
                                 Foreground="White"
                                 Content="发送"
-                                Command="{Binding SendMessageCommand}"/>
+                                Command="{Binding SendMessageCommand}"
+                                IsEnabled="{Binding IsLoading, Converter={StaticResource BoolToInverseBoolConverter}}"/>
+                            <TextBlock 
+                                Grid.Column="2"
+                                Text="{Binding LoadingStatus}"
+                                Foreground="#0077BE"
+                                FontSize="14"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
                         </Grid>
                     </Grid>
                 </Grid>

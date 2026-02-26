@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EasyYachiyoClient")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+65dfe53c07d76a0d98116890ef720f3e4b0261a8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3e914abb3bbf759fed81f7b495e4f529ba5febb1")]
 [assembly: System.Reflection.AssemblyProductAttribute("EasyYachiyoClient")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EasyYachiyoClient")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

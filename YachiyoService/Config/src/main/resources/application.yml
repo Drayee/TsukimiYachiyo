@@ -9,15 +9,10 @@ spring:
     ollama:
       chat:
         options:
-          model: tsukimi-yachiyo
+          model: 1473443474/tsukimi-yachiyo
       embedding:
         enabled: true
         model: all-minilm
       base-url: http://localhost:11434
 
 
-baidu:
-  translate:
-    api-key: ${baidu.translate.api-key}
-    secret-key: ${baidu.translate.secret-key}
-    app-id: ${baidu.translate.app-id}

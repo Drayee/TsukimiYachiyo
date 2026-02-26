@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "blCq98t5EQI=",
+  "dgSpecHash": "PVnZbe6dDNk=",
   "success": true,
   "projectFilePath": "D:\\IT\\program\\TsukimiYachiyo\\EasyYachiyoClient\\EasyYachiyoClient\\EasyYachiyoClient.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\LENOVO\\.nuget\\packages\\sevenzipextractor\\1.0.19\\sevenzipextractor.1.0.19.nupkg.sha512"
+  ],
   "logs": []
 }

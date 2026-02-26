@@ -25,15 +25,25 @@ namespace EasyYachiyoClient.Utils
         /// </summary>
         public static void Initialize()
         {
+            // 加载设置
+            UserSettings settings = SettingsManager.LoadSettings();
+            bool isProductionMode = settings.ProductionMode;
+            
             // 设置全局异常处理
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             System.Windows.Application.Current.DispatcherUnhandledException += Current_DispatcherUnhandledException;
 
-            // 初始化内存监控
-            InitializeMemoryMonitor();
+            // 非生产模式下才初始化内存监控
+            if (!isProductionMode)
+            {
+                InitializeMemoryMonitor();
+            }
 
-            // 记录应用启动
-            LogApplicationStart();
+            // 记录应用启动（非生产模式）
+            if (!isProductionMode)
+            {
+                LogApplicationStart();
+            }
         }
 
         /// <summary>
@@ -112,7 +122,12 @@ namespace EasyYachiyoClient.Utils
                                $"异常消息: {ex.Message}\n" +
                                $"堆栈跟踪: {ex.StackTrace}\n";
 
-            Console.WriteLine(logMessage);
+            // 非生产模式下才输出到控制台
+            UserSettings settings = SettingsManager.LoadSettings();
+            if (!settings.ProductionMode)
+            {
+                Console.WriteLine(logMessage);
+            }
 
             // 这里可以添加日志文件写入逻辑
         }
@@ -150,8 +165,12 @@ namespace EasyYachiyoClient.Utils
             GC.Collect();
             GC.WaitForPendingFinalizers();
 
-            // 记录应用关闭
-            Console.WriteLine($"[{DateTime.Now}] 应用关闭");
+            // 非生产模式下才记录应用关闭
+            UserSettings settings = SettingsManager.LoadSettings();
+            if (!settings.ProductionMode)
+            {
+                Console.WriteLine($"[{DateTime.Now}] 应用关闭");
+            }
         }
     }
 }

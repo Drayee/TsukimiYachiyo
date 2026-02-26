@@ -12,6 +12,18 @@
   <ItemGroup>
     <Resource Include="resource\*.png" />
     <Resource Include="resource\*.jpg" />
+    <Resource Include="resource\*.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="resource\jar\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="resource\jdk\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="resource\7z.exe" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="resource\7z.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SevenZipExtractor" Version="1.0.19" />
   </ItemGroup>
 
 </Project>
