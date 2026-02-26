@@ -1,194 +1,185 @@
-# TsukimiYachiyo
+# Yachiyo 项目 API 文档
 
-一个基于《超时空辉夜姬！》中月见八千代角色设计的AI聊天应用，使用Ollama和Qwen模型提供智能对话功能。
+## 项目概述
 
-作者：Drayee
-版本：1.0.0 SNAPSHOT
+Yachiyo 是一个集成了 AI 聊天和语音合成功能的项目，包含以下组件：
 
----
+- **EasyYachiyoClient**：基于 WPF 开发的前端应用
+- **EasyYachiyoClient-old**：基于 Python 开发的前端应用
+- **YachiyoClient**：基于 Python 开发的云端客户端
+- **YachiyoService**：基于 Java Spring Boot 开发的后端服务
+- **ollama**：模型训练文件
 
-## 📋 项目简介
+## 后端服务 API
 
-TsukimiYachiyo是一个完整的AI聊天应用，包含客户端和服务端两个主要模块。客户端提供简洁的GUI界面，服务端负责与本地Ollama模型交互，实现智能对话功能。
+### 基础信息
 
----
+- **服务地址**：`http://127.0.0.1:8080`
+- **API 版本**：`v1`
+- **请求格式**：JSON (聊天接口) / 纯文本 (语音接口)
 
-## 🛠️ 技术栈
+### 接口详情
 
-### 客户端 (YachiyoClient)
-- Python 3.13
-- Tkinter (GUI框架)
-- Requests (HTTP请求)
-- PyInstaller (打包工具)
+#### 1. 聊天接口
 
-### 服务端 (YachiyoService)
-- Java 25
-- Spring Boot 4.0.2
-- Spring AI
-- Maven
+**接口地址**：`/api/v1/ai/chat`
 
-### AI模型
-- Ollama
-- Qwen 14B
+**请求方法**：`POST`
 
----
+**请求体**：
+```json
+{
+  "prompt": "聊天内容"
+}
+```
 
-## 📁 项目结构
+**响应**：
+- 成功：返回 AI 回复的文本内容
+- 失败：返回错误信息
+
+**示例**：
+```bash
+# 请求
+curl -X POST http://127.0.0.1:8080/api/v1/ai/chat \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "你好，我是用户"}'
+
+# 响应
+"你好！我是 Yachiyo，很高兴为你服务。"
+```
+
+#### 2. 语音合成接口
+
+**接口地址**：`/api/v1/ai/speak`
+
+**请求方法**：`POST`
+
+**请求体**：纯文本内容
+
+**响应**：
+- 成功：返回音频数据（byte[]）
+- 失败：返回错误信息
+
+**示例**：
+```bash
+# 请求
+curl -X POST http://127.0.0.1:8080/api/v1/ai/speak \
+  -H "Content-Type: text/plain" \
+  -d "你好，我是 Yachiyo"
+
+# 响应
+[音频二进制数据]
+```
+
+## 后端服务实现细节
+
+### 语音合成流程
+
+1. 接收前端发送的文本
+2. 将文本翻译成日语
+3. 构造 TTS 请求对象
+4. 调用语音合成服务（地址：`http://0.0.0.0:9882`）
+5. 接收并返回音频数据
+
+### 核心类
+
+- **AIChatController**：处理 API 请求
+- **SpeakService**：语音合成服务接口
+- **SpeakServiceImpl**：语音合成服务实现
+- **TTSRequest**：语音合成请求数据结构
+
+## 前端集成
+
+### WPF 前端（EasyYachiyoClient）
+
+#### 聊天功能集成
+
+```csharp
+// 发送消息到后端
+using HttpClient client = new HttpClient();
+client.Timeout = System.TimeSpan.FromSeconds(30);
+
+// 构建请求体
+var requestBody = new { prompt = messageContent };
+string jsonBody = JsonSerializer.Serialize(requestBody);
+var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+// 发送请求
+HttpResponseMessage response = await client.PostAsync("http://127.0.0.1:8080/api/v1/ai/chat", content);
+response.EnsureSuccessStatusCode();
+
+// 读取响应
+string responseContent = await response.Content.ReadAsStringAsync();
+```
+
+#### 语音合成功能集成
+
+```csharp
+// 调用语音合成服务
+using HttpClient client = new HttpClient();
+client.Timeout = TimeSpan.FromSeconds(30);
+
+// 直接发送文本内容
+var content = new StringContent(text);
+HttpResponseMessage response = await client.PostAsync("http://127.0.0.1:8080/api/v1/ai/speak", content, cancellationToken);
+response.EnsureSuccessStatusCode();
+
+// 读取音频数据
+byte[] audioData = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+```
+
+### Python 前端（EasyYachiyoClient-old）
+
+类似的集成方式，使用 Python 的 `requests` 库发送 HTTP 请求。
+
+## 项目结构
 
 ```
 TsukimiYachiyo/
-├── YachiyoClient/              # Python客户端模块
-│   ├── config.json            # 配置文件
-│   ├── icon.ico               # 应用图标
-│   └── yachiyo.py             # 主程序
-├── YachiyoService/            # Spring Boot服务端
-│   ├── Common/                # 公共模块
-│   ├── Config/                # 配置模块
-│   ├── Controller/            # 控制器模块
-│   ├── Filter/                # 过滤器模块
-│   ├── Service/               # 服务模块
-│   └── pom.xml                # Maven配置
-├── ollama/                    # Ollama模型文件
-│   ├── v0.0.1/                # 版本1模型
-│   └── v0.0.2/                # 版本2模型
-└── README.md                  # 项目说明文档
+├── EasyYachiyoClient/         # WPF 前端
+├── EasyYachiyoClient-old/     # Python 前端
+├── ollama/                    # 模型训练文件
+│   ├── v0.0.1/                # 模型版本 1
+│   └── v0.0.2/                # 模型版本 2
+├── YachiyoClient/             # Python 云端客户端
+└── YachiyoService/            # Java 后端服务
+    ├── Common/                # 公共模块
+    ├── Config/                # 配置模块
+    ├── Controller/            # 控制器模块
+    ├── Service/               # 服务模块
+    └── dto/                   # 数据传输对象
 ```
 
----
+## 环境要求
 
-## 🚀 快速开始
+### 后端服务
 
-### 1. 准备工作
+- Java 8+
+- Spring Boot 3.0+
+- Maven
 
-#### 安装Ollama
-请先安装Ollama并下载Qwen模型：
+### 前端应用
 
-```bash
-ollama pull qwen:13b
-```
+- WPF：.NET 8.0+
+- Python 前端：Python 3.7+
 
-### 2. 启动服务端
+## 运行说明
 
-```bash
-cd YachiyoService
-mvn spring-boot:run
-```
+1. 启动后端服务：在 YachiyoService 目录下执行 `mvn spring-boot:run`
+2. 启动前端应用：运行 EasyYachiyoClient.exe 或 Python 脚本
+3. 确保语音合成服务（地址：`http://0.0.0.0:9882`）已启动
 
-服务将在默认端口启动，等待客户端连接。
+## 常见问题
 
-### 3. 运行客户端
+1. **API 调用失败**：检查后端服务是否运行，端口是否正确
+2. **语音合成失败**：检查语音合成服务是否运行，地址是否正确
+3. **翻译失败**：检查翻译服务配置是否正确
 
-#### 方式一：直接运行Python脚本
+## 版本历史
 
-```bash
-cd YachiyoClient
-pip install requests
-python yachiyo.py
-```
+- v0.0.1：初始版本
+- v0.0.2：优化语音合成功能
 
-#### 方式二：打包成可执行文件
+## 联系方式
 
-```bash
-cd YachiyoClient
-pip install requests pyinstaller
-pyinstaller -w -F -i icon.ico yachiyo.py
-```
-
-然后双击 `dist` 目录下的 `yachiyo.exe` 即可运行。
-
----
-
-## ⚙️ 配置说明
-
-### 客户端配置
-
-客户端使用 `config.json` 文件进行配置，默认内容：
-
-```json
-{
-  "url": "http://1bo19870064ac.vicp.fun/api/v1/ai/chat"
-}
-```
-
-如果服务端在本地运行，可以修改为：
-
-```json
-{
-  "url": "http://localhost:8080/api/v1/ai/chat"
-}
-```
-
-### 服务端配置
-
-服务端配置文件位于 `YachiyoService/Config/src/main/resources/application.yml`，用于配置AI模型连接等信息。
-
----
-
-## 📡 API文档
-
-### 聊天接口
-
-- **URL**: `/api/v1/ai/chat`
-- **方法**: `POST`
-- **请求体**: `text/plain` - 用户消息内容
-- **响应**: `text/plain` - AI回复内容
-
-#### 示例请求
-
-```bash
-curl -X POST -d "你好，八千代" http://localhost:8080/api/v1/ai/chat
-```
-
-#### 示例响应
-
-```
-你好！我是月见八千代，很高兴为你服务！
-```
-
----
-
-## 🎨 客户端界面
-
-客户端提供简洁的GUI界面：
-- 输入框：用于输入消息
-- 发送按钮：发送消息到服务端
-- 显示区域：显示AI回复
-
----
-
-## 🔧 开发说明
-
-### 客户端开发
-
-客户端基于Python Tkinter开发，主要文件：
-- `yachiyo.py`: 主程序，包含GUI和网络请求逻辑
-- `config.json`: 配置文件，存储服务端URL
-
-### 服务端开发
-
-服务端基于Spring Boot开发，主要模块：
-- `Controller`: 处理HTTP请求
-- `Config`: 配置AI客户端
-- `Service`: 业务逻辑层
-
----
-
-## 📄 许可证
-
-本项目采用MIT许可证，详情请查看LICENSE文件。
-
----
-
-## 📧 联系方式
-
-如有问题或建议，请联系：Drayee
-
----
-
-## 更新日志
-
-### v1.0.0 SNAPSHOT
-- 初始版本发布
-- 实现基本的AI聊天功能
-- 支持客户端和服务端分离架构
-- 支持Ollama Qwen 14B模型
+如有问题，请联系项目维护者。
