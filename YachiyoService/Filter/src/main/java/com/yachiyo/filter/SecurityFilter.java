@@ -1,5 +1,6 @@
 package com.yachiyo.filter;
 
+import com.yachiyo.Config.SecurityConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
  * 安全过滤器
@@ -21,6 +23,9 @@ public class SecurityFilter  extends AbstractHttpConfigurer<SecurityFilter, Http
 
     @Value("${security.open-api}")
     private String[] openApi;
+
+    @Autowired
+    private CorsConfigurationSource corsConfigurationSource;
 
     @Autowired
     private JwtFilter jwtFilter;
@@ -35,6 +40,7 @@ public class SecurityFilter  extends AbstractHttpConfigurer<SecurityFilter, Http
                         .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(authenticationEntryPoint()))

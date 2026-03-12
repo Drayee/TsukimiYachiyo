@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.util.Random;
 
 @RestController
 @RequestMapping("/api/v2/ai")
@@ -41,8 +42,8 @@ public class AIChatController {
      * 文本转语音
      */
     @PostMapping("/speak")
-    public byte[] Speak(@RequestBody @Valid SpeakRequest speakRequest){
-        return speakService.TextToSpeech(speakRequest);
+    public Result<byte[]> Speak(@RequestBody @Valid SpeakRequest speakRequest){
+        return Result.success(speakService.TextToSpeech(speakRequest), "语音合成成功", speakRequest.getText());
     }
 
     /**

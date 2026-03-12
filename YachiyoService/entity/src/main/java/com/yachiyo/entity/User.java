@@ -1,5 +1,6 @@
 package com.yachiyo.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -10,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor @NoArgsConstructor
 public class User {
 
-    @TableId("user_id")
+    @TableId(value = "user_id",type = IdType.AUTO)
     int id;
 
     String name;

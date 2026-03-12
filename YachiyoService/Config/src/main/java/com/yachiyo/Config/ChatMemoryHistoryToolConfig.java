@@ -38,7 +38,6 @@ public class ChatMemoryHistoryToolConfig {
         if (conversation != null) {
             conversationMapper.updateById(conversation);
             Message message = new Message();
-            message.setId(id);
             message.setConversationId(id);
             message.setUser(UserContent);
             message.setAssistant(YachiyoContent);

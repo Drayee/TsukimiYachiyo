@@ -30,12 +30,16 @@ public class AuthServiceImpl implements AuthService {
             User user = new User();
             user.setName(loginRequest.getUsername());
             user.setPassword(securitySafeToolConfig.md5(loginRequest.getPassword()));
-            user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getName, user.getName())
+            User selectUser = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getName, user.getName())
                     .eq(User::getPassword, user.getPassword()));
-            if (user == null) {
-                return Result.error("400","用户名或密码错误",null);
+            if (selectUser == null) {
+                boolean IsExistUser = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getName, user.getName())) == 0;
+                if (IsExistUser) {
+                    return Result.error("400.1","用户名不存在",null);
+                }
+                return Result.error("400.2","密码错误",null);
             }
-            String token = jwtUtils.generateToken((long) user.getId(), user.getName(), securitySafeToolConfig.getUnique());
+            String token = jwtUtils.generateToken((long) selectUser.getId(), selectUser.getName(), securitySafeToolConfig.getUnique());
             return Result.success(token, "登录成功",null);
         } catch (Exception e) {
             return Result.error("500","登录失败",e.getMessage());
