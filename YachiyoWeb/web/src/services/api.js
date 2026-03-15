@@ -104,6 +104,7 @@ export const chatAPI = {
       function processChunk() {
         return reader.read().then(({ done, value }) => {
           if (done) {
+            // 当流结束时，即使没有收到 [DONE] 信号，也调用完成回调
             onComplete && onComplete();
             return;
           }
@@ -128,16 +129,18 @@ export const chatAPI = {
             }
             
             const dataStr = dataChunk.trim();
-            if (!dataStr || dataStr === '[DONE]') {
+            if (dataStr === '[DONE]') {
               onComplete && onComplete();
               return;
             }
-            try {
-              // 直接使用 dataStr，因为后端直接返回 SseEmitter 的内容
-              // 即使只返回一个字，也直接追加
-              onData && onData(dataStr);
-            } catch (e) {
-              console.error('解析 SSE 数据失败:', e);
+            if (dataStr) {
+              try {
+                // 直接使用 dataStr，因为后端直接返回 SseEmitter 的内容
+                // 即使只返回一个字，也直接追加
+                onData && onData(dataStr);
+              } catch (e) {
+                console.error('解析 SSE 数据失败:', e);
+              }
             }
           }
           
@@ -145,6 +148,10 @@ export const chatAPI = {
           buffer = processedBuffer;
 
           return processChunk();
+        }).catch(error => {
+          console.error('读取 SSE 数据失败:', error);
+          // 即使发生错误，也要调用完成回调，确保 UI 状态正确更新
+          onComplete && onComplete();
         });
       }
 

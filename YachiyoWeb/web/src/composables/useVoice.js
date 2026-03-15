@@ -6,9 +6,9 @@ export function useVoice() {
   const currentPlayingAudio = ref(null);
 
   const isVoiceClickable = (text) => {
-    const status = voiceStatusMap.value.get(text);
-    if (status?.isLoading) return false;
-    if (currentPlayingAudio.value && currentPlayingAudio.value !== status?.audio) return false;
+    const status = voiceStatusMap.value.get(text) || { isLoading: false, audio: null };
+    if (status.isLoading) return false;
+    if (currentPlayingAudio.value && currentPlayingAudio.value !== status.audio) return false;
     return true;
   };
 

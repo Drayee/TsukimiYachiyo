@@ -71,7 +71,8 @@
       <transition-group name="message">
         <div v-for="(msg, index) in messages" :key="index" :class="['message', msg.type]">
           <div class="message-bubble">
-            {{ msg.content }}
+            <span v-if="msg.type === 'assistant' && msg.isStreaming && !msg.content">思考中...</span>
+            <span v-else>{{ msg.content }}</span>
             <div v-if="msg.type === 'assistant' && !msg.isStreaming" class="message-actions">
               <button
                 class="voice-btn"
