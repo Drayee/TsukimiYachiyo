@@ -9,11 +9,13 @@ import com.yachiyo.service.SpeakService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.validation.Valid;
 import java.util.Random;
@@ -52,5 +54,15 @@ public class AIChatController {
     @PostMapping("/create")
     public Result<String> Create(){
         return chatService.Create();
+    }
+
+    /**
+     * 流式聊天
+     * @param chatRequest 聊天请求
+     * @return 回复
+     */
+    @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter StreamChat(@RequestBody @Valid ChatRequest chatRequest){
+        return chatService.StreamChat(chatRequest);
     }
 }

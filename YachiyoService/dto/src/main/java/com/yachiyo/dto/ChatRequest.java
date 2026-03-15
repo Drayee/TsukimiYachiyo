@@ -10,6 +10,6 @@ public class ChatRequest {
     private String message;
 
     @NotBlank(message = "会话ID不能为空")
-    private String conservationId;
+    private String conversationId;
 
 }

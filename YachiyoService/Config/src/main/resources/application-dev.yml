@@ -10,6 +10,11 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   # 模型配置
   ai:
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: always
     ollama:
       chat:
         options:

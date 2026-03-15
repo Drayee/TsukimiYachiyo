@@ -1,7 +1,8 @@
 package com.yachiyo.service.Impl;
 
 import com.yachiyo.Config.ChatMemoryHistoryToolConfig;
-import com.yachiyo.dto.PromptRequest;
+import com.yachiyo.dto.ConversationResponse;
+import com.yachiyo.dto.PromptResponse;
 import com.yachiyo.result.Result;
 import com.yachiyo.service.HistoryService;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,7 @@ public class HistoryServiceImpl implements HistoryService {
     private ChatMemoryHistoryToolConfig chatMemoryHistoryToolConfig;
 
     @Override
-    public Result<List<PromptRequest>> getHistory(String conservationId) {
+    public Result<List<PromptResponse>> getHistory(String conservationId) {
         try {
             return Result.success(chatMemoryHistoryToolConfig.getHistory(Integer.parseInt(conservationId)));
         } catch (Exception e) {
@@ -28,7 +29,7 @@ public class HistoryServiceImpl implements HistoryService {
     }
 
     @Override
-    public Result<List<Integer>> getConservationIds() {
+    public Result<List<ConversationResponse>> getConservationIds() {
         try {
             return Result.success(chatMemoryHistoryToolConfig.getConservationIds());
         } catch (Exception e) {

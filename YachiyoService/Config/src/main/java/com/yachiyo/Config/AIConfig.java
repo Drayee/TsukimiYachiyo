@@ -5,6 +5,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.openaisdk.OpenAiSdkChatModel;
@@ -24,16 +25,19 @@ public class AIConfig {
     private String SystemPrompt;
 
     @Bean
-    public ChatMemory chatMemory(){
-        return MessageWindowChatMemory.builder().build();
+    public ChatMemory chatMemory(ChatMemoryRepository chatMemoryRepository){
+        return MessageWindowChatMemory.builder()
+                .chatMemoryRepository(chatMemoryRepository)
+                .maxMessages(20)
+                .build();
     }
 
     @Bean("ChatModel")
-    public ChatClient chatClient() {
+    public ChatClient chatClient(ChatMemory chatMemory) {
         return ChatClient.builder(model)
                 .defaultAdvisors(
                         new SimpleLoggerAdvisor(),
-                        MessageChatMemoryAdvisor.builder(chatMemory()).build()
+                        MessageChatMemoryAdvisor.builder(chatMemory).build()
                 )
                 .build();
     }

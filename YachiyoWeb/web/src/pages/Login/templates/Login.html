@@ -1,0 +1,67 @@
+<div class="login-container">
+  <!-- 初始动画 -->
+  <video 
+    ref="introVideo" 
+    class="intro-video" 
+    autoplay 
+    muted 
+    @ended="onIntroEnd"
+  >
+    <source src="/resource/login_show.mp4" type="video/mp4">
+    您的浏览器不支持视频播放。
+  </video>
+  
+  <!-- 循环背景动画 -->
+  <video 
+    ref="cycleVideo" 
+    class="cycle-video" 
+    autoplay 
+    muted 
+    loop 
+    style="display: none;"
+  >
+    <source src="/resource/login_show_cycle.mp4" type="video/mp4">
+    您的浏览器不支持视频播放。
+  </video>
+  
+  <!-- 登录表单 -->
+  <div class="login-form" :class="{ 'fade-in': showForm }">
+    
+    <form @submit.prevent="handleSubmit">
+      <div class="form-group">
+        <label for="username">用户名</label>
+        <input 
+          type="text" 
+          id="username" 
+          v-model="form.username" 
+          placeholder="请输入用户名"
+          required
+        >
+      </div>
+      
+      <div class="form-group">
+        <label for="password">密码</label>
+        <input 
+          type="password" 
+          id="password" 
+          v-model="form.password" 
+          placeholder="请输入密码"
+          required
+        >
+      </div>
+      
+      <div class="form-actions">
+        <button type="submit" class="login-btn" :disabled="isLoading">
+          {{ isLoading ? '登录中...' : '登录' }}
+        </button>
+      </div>
+      
+      <div v-if="error" class="error-message">
+        {{ error }}
+      </div>
+    </form>
+  </div>
+  
+  <!-- 登录成功背景过渡 -->
+  <div class="success-overlay" :class="{ 'show': loginSuccess }"></div>
+</div>

@@ -63,10 +63,99 @@ apiClient.interceptors.response.use(
 );
 
 export const chatAPI = {
-  chat(message, conservationId) {
+  chat(message, conversationId) {
     return apiClient.post('/api/v2/ai/chat', {
       message,
-      conservationId: String(conservationId)
+      conversationId: String(conversationId)
+    });
+  },
+
+  streamChat(message, conversationId, onData, onComplete, onError, signal) {
+    const token = localStorage.getItem('token');
+    
+    // 由于 EventSource 只支持 GET 请求，我们需要使用 fetch + ReadableStream
+    // 这是标准的 SSE 客户端实现方式
+    const controller = new AbortController();
+    if (signal) {
+      signal.addEventListener('abort', () => controller.abort());
+    }
+
+    fetch('/api/v2/ai/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify({
+        message,
+        conversationId: String(conversationId)
+      }),
+      signal: controller.signal
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      function processChunk() {
+        return reader.read().then(({ done, value }) => {
+          if (done) {
+            onComplete && onComplete();
+            return;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          
+          // 处理多个 data 块连在一起的情况，例如 data:嗨data:~
+          let processedBuffer = buffer;
+          while (processedBuffer.includes('data:')) {
+            const dataIndex = processedBuffer.indexOf('data:');
+            if (dataIndex === -1) break;
+            
+            // 找到下一个 data: 的位置或行尾
+            const nextDataIndex = processedBuffer.indexOf('data:', dataIndex + 5);
+            let dataChunk;
+            if (nextDataIndex === -1) {
+              dataChunk = processedBuffer.slice(dataIndex + 5);
+              processedBuffer = '';
+            } else {
+              dataChunk = processedBuffer.slice(dataIndex + 5, nextDataIndex);
+              processedBuffer = processedBuffer.slice(nextDataIndex);
+            }
+            
+            const dataStr = dataChunk.trim();
+            if (!dataStr || dataStr === '[DONE]') {
+              onComplete && onComplete();
+              return;
+            }
+            try {
+              // 直接使用 dataStr，因为后端直接返回 SseEmitter 的内容
+              // 即使只返回一个字，也直接追加
+              onData && onData(dataStr);
+            } catch (e) {
+              console.error('解析 SSE 数据失败:', e);
+            }
+          }
+          
+          // 保存剩余的未处理数据
+          buffer = processedBuffer;
+
+          return processChunk();
+        });
+      }
+
+      return processChunk();
+    })
+    .catch(error => {
+      if (error.name === 'AbortError') {
+        return;
+      }
+      console.error('SSE 连接错误:', error);
+      onError && onError(error);
     });
   },
 
@@ -85,6 +174,30 @@ export const chatAPI = {
   speak(text) {
     return apiClient.post('/api/v2/ai/speak', { text: text }, {
 
+    });
+  }
+};
+
+export const userAPI = {
+  getUserDetail() {
+    return apiClient.post('/api/v1/user/detail/detail/get');
+  },
+
+  updateUserDetail(userDetail) {
+    return apiClient.post('/api/v1/user/detail/detail/update', userDetail);
+  },
+
+  getAvatar() {
+    return apiClient.post('/api/v1/user/detail/avatar/get');
+  },
+
+  updateAvatar(file) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return apiClient.post('/api/v1/user/detail/avatar/update', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     });
   }
 };

@@ -1,6 +1,7 @@
 package com.yachiyo.controller;
 
-import com.yachiyo.dto.PromptRequest;
+import com.yachiyo.dto.ConversationResponse;
+import com.yachiyo.dto.PromptResponse;
 import com.yachiyo.result.Result;
 import com.yachiyo.service.HistoryService;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,7 @@ public class HistoryController {
      * @return 对话记忆
      */
     @GetMapping("/{id}")
-    public Result<List<PromptRequest>> getHistory(@PathVariable String id) throws Exception {
+    public Result<List<PromptResponse>> getHistory(@PathVariable String id) throws Exception {
         return historyService.getHistory(id);
     }
 
@@ -39,7 +40,7 @@ public class HistoryController {
      * @return 会话列表
      */
     @GetMapping("/list")
-    public Result<List<Integer>> getHistoryList() throws Exception {
+    public Result<List<ConversationResponse>> getHistoryList() throws Exception {
         return historyService.getConservationIds();
     }
 }

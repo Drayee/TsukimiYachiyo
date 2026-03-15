@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Login from '../components/Login.vue';
+import Login from '../pages/Login/Login.vue';
 
 const routes = [
   {
@@ -11,7 +11,17 @@ const routes = [
     path: '/home',
     name: 'Home',
     // 懒加载聊天主页组件
-    component: () => import('../views/ChatHome.vue'),
+    component: () => import('../pages/ChatHome/ChatHome.vue'),
+    // 路由守卫，需要登录才能访问
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    // 懒加载设置页面组件
+    component: () => import('../pages/UserSettings/UserSettings.vue'),
     // 路由守卫，需要登录才能访问
     meta: {
       requiresAuth: true

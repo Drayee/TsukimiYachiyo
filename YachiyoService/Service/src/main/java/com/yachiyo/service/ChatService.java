@@ -3,6 +3,7 @@ package com.yachiyo.service;
 import com.yachiyo.dto.ChatRequest;
 import com.yachiyo.result.Result;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 public interface ChatService {
 
@@ -20,4 +21,13 @@ public interface ChatService {
      */
     @Schema(description = "创建会话")
     public Result<String> Create();
+
+
+    /**
+     * 流式聊天
+     * @param chatRequest 聊天请求
+     * @return 回复
+     */
+     @Schema(description = "流式聊天")
+    public SseEmitter StreamChat(ChatRequest chatRequest);
 }

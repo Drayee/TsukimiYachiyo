@@ -1,18 +1,21 @@
 package com.yachiyo.Config;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.yachiyo.dto.PromptRequest;
+import com.yachiyo.dto.ConversationResponse;
+import com.yachiyo.dto.PromptResponse;
 import com.yachiyo.entity.Conversation;
 import com.yachiyo.entity.Message;
 import com.yachiyo.entity.User;
 import com.yachiyo.mapper.ConversationMapper;
 import com.yachiyo.mapper.MessageMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -30,24 +33,18 @@ public class ChatMemoryHistoryToolConfig {
     /**
      * 保存对话
      * @param id 会话id
-     * @param UserContent 用户内容
-     * @param YachiyoContent 机器人内容
+     * @param prompt 问题
      */
-    public void save(int id,String UserContent,String YachiyoContent) throws Exception {
+    public void save(int id,String prompt) throws Exception {
         Conversation conversation = conversationMapper.selectById(id);
-        if (conversation != null) {
-            conversationMapper.updateById(conversation);
-            Message message = new Message();
-            message.setConversationId(id);
-            message.setUser(UserContent);
-            message.setAssistant(YachiyoContent);
-            if (messageMapper.insert(message) > 0) {
-                log.info("保存对话成功");
-            }else {
-                throw new Exception("保存对话失败");
-            }
-        }else {
+        if (conversation == null) {
             throw new Exception("会话不存在");
+        }
+        Message message = new Message();
+        message.setId(id);
+        if (messageMapper.selectList(new QueryWrapper<Message>().eq("conversation_id",conversation.getId())).isEmpty()) {
+            conversation.setTitle(prompt);
+            conversationMapper.updateById(conversation);
         }
     }
 
@@ -71,12 +68,20 @@ public class ChatMemoryHistoryToolConfig {
      * @param id 会话id
      * @return 对话记忆
      */
-    public List<PromptRequest> getHistory(int id) throws Exception {
+    public List<PromptResponse> getHistory(int id) throws Exception {
         Conversation conversation = conversationMapper.selectById(id);
         if (conversation != null) {
             List<Message> messages = messageMapper.selectList(new QueryWrapper<Message>().eq("conversation_id", id));
             if (messages != null) {
-                return messages.stream().map(message -> new PromptRequest(message.getUser(), message.getAssistant())).collect(Collectors.toList());
+                List<String> user = new ArrayList<>();
+                List<String> yachiyo = new ArrayList<>();
+                for (Message message : messages) {
+                    if (message.getType() == MessageType.USER) {
+                        user.add(message.getContent());}
+                    else if (message.getType() == MessageType.ASSISTANT) {
+                        yachiyo.add(message.getContent());}
+                }
+                return user.stream().map(u -> new PromptResponse(u, yachiyo.get(user.indexOf(u)))).collect(Collectors.toList());
             }else {
                 throw new Exception("获取对话记忆失败");
             }
@@ -89,9 +94,9 @@ public class ChatMemoryHistoryToolConfig {
      * 获取会话列表
      * @return 会话列表
      */
-    public List<Integer> getConservationIds() {
+    public List<ConversationResponse> getConservationIds() {
         User user = (User) Objects.requireNonNull(Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal());
-        return conversationMapper.selectList(new QueryWrapper<Conversation>().eq("user_id", user.getId())).stream().map(Conversation::getId).collect(Collectors.toList());
+        return conversationMapper.selectList(new QueryWrapper<Conversation>().eq("user_id", user.getId())).stream().map(conversation -> new ConversationResponse(conversation.getId(), conversation.getTitle())).collect(Collectors.toList());
     }
 
     @Bean

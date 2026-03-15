@@ -6,6 +6,8 @@ import com.yachiyo.Utils.JwtUtils;
 import com.yachiyo.dto.LoginRequest;
 import com.yachiyo.dto.RegisterRequest;
 import com.yachiyo.entity.User;
+import com.yachiyo.entity.UserDetail;
+import com.yachiyo.mapper.UserDetailMapper;
 import com.yachiyo.mapper.UserMapper;
 import com.yachiyo.result.Result;
 import com.yachiyo.service.AuthService;
@@ -23,6 +25,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private JwtUtils jwtUtils;
+
+    @Autowired
+    private UserDetailMapper userDetailMapper;
 
     @Override
     public Result<String> Login(LoginRequest loginRequest) {
@@ -56,6 +61,9 @@ public class AuthServiceImpl implements AuthService {
                 return Result.error("400","用户名已存在",null);
             }
             userMapper.insert(user);
+            UserDetail userDetail = new UserDetail();
+            userDetail.setUserId(user.getId());
+            userDetailMapper.insert(userDetail);
             String token = jwtUtils.generateToken((long) user.getId(), user.getName(), securitySafeToolConfig.getUnique());
             return Result.success(token, "注册成功",null);
         } catch (Exception e) {

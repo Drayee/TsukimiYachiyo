@@ -120,6 +120,11 @@
             <artifactId>spring-ai-starter-model-openai-sdk</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-chat-memory-repository-jdbc</artifactId>
+        </dependency>
+
 
     </dependencies>
 
