@@ -7,6 +7,7 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestTemplate;
@@ -23,7 +24,6 @@ public class FastMethodConfig {
     @Autowired
     private UserDetailMapper userDetailMapper;
 
-
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
@@ -33,7 +33,7 @@ public class FastMethodConfig {
     private RedisTemplate<String, Object> redisTemplate;
 
     public String getHoliday() {
-        // 从redis 中获取当前日期
+        // 从redis 中获取当前节假日
         String holiday = Objects.requireNonNull(redisTemplate.opsForHash().get("public:date", "holiday")).toString();
         if (!holiday.equals("非节假日")) {
             return holiday;
@@ -50,8 +50,8 @@ public class FastMethodConfig {
 
     public boolean getBirthday(User user) {
         // 从redis 中获取当前日期
-        String dayT = Objects.requireNonNull(redisTemplate.opsForHash().get("public:date:today", "day")).toString();
-        String monthT = Objects.requireNonNull(redisTemplate.opsForHash().get("public:date:today", "month")).toString();
+        String dayT = Objects.requireNonNull(redisTemplate.opsForHash().get("public:date", "day")).toString();
+        String monthT = Objects.requireNonNull(redisTemplate.opsForHash().get("public:date", "month")).toString();
         if (!Objects.isNull(dayT) && !Objects.isNull(monthT)) {
             if (user != null) {
                 UserDetail userDetail = userDetailMapper.selectById(user.getId());

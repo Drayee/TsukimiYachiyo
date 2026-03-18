@@ -7,6 +7,8 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * 自定义 Jackson3 序列化器，用于 Redis 缓存
  * 该序列化器使用 Jackson3 进行序列化和反序列化，支持 Spring Cache 缓存注解。
@@ -30,7 +32,7 @@ public class GenericJackson3JsonRedisSerializer implements RedisSerializer<Objec
             return new byte[0];
         }
         try {
-            return objectMapper.writeValueAsBytes(object);
+            return objectMapper.writeValueAsString(object).getBytes(StandardCharsets.UTF_8);
         } catch (Exception e) {
             log.error("不能序列化: " + e.getMessage(), e);
             throw new SerializationException("不能序列化: " + e.getMessage(), e);
@@ -43,7 +45,8 @@ public class GenericJackson3JsonRedisSerializer implements RedisSerializer<Objec
             return null;
         }
         try {
-            return objectMapper.readValue(bytes, Object.class);
+            String json = new String(bytes, StandardCharsets.UTF_8);
+            return objectMapper.readValue(json, Object.class);
         } catch (Exception e) {
             log.error("不能反序列化: {}", e.getMessage(), e);
             throw new SerializationException("不能反序列化: " + e.getMessage(), e);
